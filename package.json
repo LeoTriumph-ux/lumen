@@ -27,6 +27,16 @@
       "electron/**/*",
       "package.json"
     ],
+    "extraResources": [
+      {
+        "from": "public/icon.ico",
+        "to": "icon.ico"
+      },
+      {
+        "from": "public/icon.png",
+        "to": "icon.png"
+      }
+    ],
     "win": {
       "target": [
         "nsis",

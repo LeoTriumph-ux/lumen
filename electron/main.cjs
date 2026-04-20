@@ -21,6 +21,11 @@ const scheduler = require('./scheduler.cjs');
 const isDev = process.env.NODE_ENV === 'development';
 const DEV_URL = 'http://localhost:5173';
 
+function getIconPath(name) {
+  if (isDev) return path.join(__dirname, '..', 'public', name);
+  return path.join(process.resourcesPath, name);
+}
+
 let mainWindow = null;
 let captureWindow = null;
 let tray = null;
@@ -42,12 +47,14 @@ function loadRendererURL(win, params = '') {
 }
 
 function createMainWindow() {
+  const iconPath = getIconPath('icon.ico');
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 820,
     minWidth: 960,
     minHeight: 600,
     show: false,
+    icon: iconPath,
     backgroundColor: '#0a0a0a',
     title: 'Lumen',
     titleBarStyle: 'hidden',
@@ -130,9 +137,9 @@ function createCaptureWindow() {
 /* ──────────────────────── 托盘 ──────────────────────── */
 
 function createTray() {
-  const iconPath = path.join(__dirname, '..', 'public', 'icon.png');
+  const trayIconPath = getIconPath('icon.png');
   let icon = nativeImage.createEmpty();
-  if (fs.existsSync(iconPath)) icon = nativeImage.createFromPath(iconPath);
+  if (fs.existsSync(trayIconPath)) icon = nativeImage.createFromPath(trayIconPath);
   if (icon.isEmpty()) {
     // 生成 16x16 纯色占位图标
     icon = nativeImage.createFromDataURL(
@@ -148,8 +155,10 @@ function createTray() {
     { label: '退出', click: () => { app.isQuitting = true; app.quit(); } },
   ]));
   tray.on('click', () => {
-    if (mainWindow) {
-      mainWindow.isVisible() ? mainWindow.focus() : mainWindow.show();
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.show();
+      mainWindow.focus();
     } else {
       createMainWindow();
     }
