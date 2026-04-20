@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<title>Lumen · 灵犀 · 视觉稿</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          bg: { DEFAULT: '#0a0a0a', elev: '#121212', card: '#1a1a1a', soft: '#222' },
+          stroke: '#2a2a2a',
+          accent: '#f5c542',
+          fg: { DEFAULT: '#ededed', muted: '#8a8a8a', dim: '#5a5a5a' },
+        },
+        fontFamily: {
+          sans: ['Inter', 'PingFang SC', 'Microsoft YaHei', 'sans-serif'],
+          serif: ['Source Serif Pro', 'Source Han Serif SC', 'serif'],
+          mono: ['JetBrains Mono', 'monospace'],
+        },
+      },
+    },
+  };
+</script>
+<style>
+  body { background: #050505; color: #ededed; font-family: Inter, 'PingFang SC', sans-serif; }
+  .glow { box-shadow: 0 0 40px rgba(245, 197, 66, 0.08); }
+  .card-hover:hover { background: #1f1f1f; transition: background .15s ease; }
+  .scroll::-webkit-scrollbar { width: 6px; }
+  .scroll::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 3px; }
+  .scroll::-webkit-scrollbar-track { background: transparent; }
+  .fade-in { animation: fade .3s ease; }
+  @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+  .pop { animation: pop .2s cubic-bezier(.2,.8,.2,1); }
+  @keyframes pop { from { opacity: 0; transform: scale(.95); } to { opacity: 1; transform: scale(1); } }
+  .typing::after { content: '▋'; color: #f5c542; animation: blink 1s infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+  .dot-pattern {
+    background-image: radial-gradient(circle, #1a1a1a 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+  .note-hover:hover { border-color: #3a3a3a; }
+  .chip { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; padding: 2px 8px; border-radius: 999px; background: #222; color: #aaa; border: 1px solid #2a2a2a; }
+  .chip-accent { background: rgba(245, 197, 66, 0.08); color: #f5c542; border-color: rgba(245, 197, 66, 0.25); }
+</style>
+</head>
+<body class="min-h-screen">
+
+<!-- 顶部说明栏 -->
+<div class="border-b border-stroke bg-bg-elev/50 backdrop-blur">
+  <div class="max-w-[1400px] mx-auto px-6 py-3 flex items-center justify-between text-sm">
+    <div class="flex items-center gap-3">
+      <span class="text-accent">✦</span>
+      <span class="font-semibold">Lumen 可交互视觉稿</span>
+      <span class="text-fg-muted">· 点击下方按钮预览不同场景</span>
+    </div>
+    <div class="flex gap-2">
+      <button onclick="setView('main')" id="btn-main" class="px-3 py-1 rounded border border-stroke hover:border-accent text-xs">主窗口</button>
+      <button onclick="setView('capture')" id="btn-capture" class="px-3 py-1 rounded border border-stroke hover:border-accent text-xs">闪念捕捉</button>
+      <button onclick="setView('cmd')" id="btn-cmd" class="px-3 py-1 rounded border border-stroke hover:border-accent text-xs">命令面板</button>
+      <button onclick="setView('empty')" id="btn-empty" class="px-3 py-1 rounded border border-stroke hover:border-accent text-xs">空状态</button>
+    </div>
+  </div>
+</div>
+
+<!-- 主窗口 -->
+<div class="max-w-[1400px] mx-auto p-6 relative">
+
+  <!-- 模拟桌面壁纸 -->
+  <div class="relative rounded-xl overflow-hidden glow" id="main-frame" style="height: 780px; background: #0a0a0a;">
+
+    <!-- 伪造的 Electron 标题栏 -->
+    <div class="h-10 bg-bg-elev border-b border-stroke flex items-center justify-between px-4">
+      <div class="flex items-center gap-2">
+        <span class="text-accent text-lg">✦</span>
+        <span class="font-semibold">Lumen</span>
+      </div>
+      <div class="flex-1 flex justify-center">
+        <button onclick="setView('cmd')" class="px-3 py-1 rounded bg-bg-soft border border-stroke text-xs text-fg-muted flex items-center gap-2 hover:border-fg-muted">
+          <span>🔍</span>
+          <span>搜索笔记或执行命令</span>
+          <kbd class="ml-4 px-1.5 py-0.5 bg-bg-card rounded text-[10px]">Ctrl K</kbd>
+        </button>
+      </div>
+      <div class="flex items-center gap-3 text-fg-muted text-sm">
+        <button class="hover:text-fg">🌙</button>
+        <button class="hover:text-fg">⚙️</button>
+        <span class="ml-2">─ □ ✕</span>
+      </div>
+    </div>
+
+    <!-- 主窗口三栏 -->
+    <div class="flex" style="height: calc(100% - 40px);" id="main-content">
+
+      <!-- 左：时间线 -->
+      <aside class="w-[280px] border-r border-stroke bg-bg-elev flex flex-col">
+        <div class="p-4 border-b border-stroke">
+          <button onclick="setView('capture')" class="w-full py-2.5 rounded-lg bg-accent text-black font-medium text-sm hover:bg-accent/90 transition flex items-center justify-center gap-2">
+            <span>✚</span>
+            <span>新捕捉</span>
+            <kbd class="ml-2 px-1.5 py-0.5 bg-black/20 rounded text-[10px]">⌃⌥Space</kbd>
+          </button>
+        </div>
+        <div class="flex-1 overflow-y-auto scroll p-3 space-y-5 text-sm">
+          <!-- 今天 -->
+          <div>
+            <div class="flex items-center justify-between px-1 mb-2">
+              <span class="text-fg-muted text-xs uppercase tracking-wider">今天</span>
+              <span class="text-fg-dim text-xs">4</span>
+            </div>
+            <div class="space-y-1">
+              <button onclick="selectNote(1)" class="w-full text-left px-3 py-2 rounded-md card-hover border border-transparent hover:border-stroke" id="note-btn-1">
+                <div class="flex items-center gap-2 text-xs text-fg-muted mb-1">
+                  <span>21:18</span>
+                  <span class="chip-accent chip">技术</span>
+                </div>
+                <div class="truncate">关于 SQLite FTS5 的发现</div>
+              </button>
+              <button onclick="selectNote(2)" class="w-full text-left px-3 py-2 rounded-md card-hover border border-transparent hover:border-stroke">
+                <div class="flex items-center gap-2 text-xs text-fg-muted mb-1">
+                  <span>19:42</span>
+                </div>
+                <div class="truncate text-fg">下午散步想到：AI 工具的摩擦…</div>
+              </button>
+              <button onclick="selectNote(3)" class="w-full text-left px-3 py-2 rounded-md card-hover border border-transparent hover:border-stroke">
+                <div class="flex items-center gap-2 text-xs text-fg-muted mb-1">
+                  <span>15:03</span>
+                  <span class="chip">灵感</span>
+                </div>
+                <div class="truncate text-fg">"本地优先" 不是技术，是哲学</div>
+              </button>
+              <button onclick="selectNote(4)" class="w-full text-left px-3 py-2 rounded-md card-hover border border-transparent hover:border-stroke">
+                <div class="flex items-center gap-2 text-xs text-fg-muted mb-1">
+                  <span>09:11</span>
+                </div>
+                <div class="truncate text-fg">早餐：豆浆油条，想到…</div>
+              </button>
+            </div>
+          </div>
+
+          <!-- 昨天 -->
+          <div>
+            <div class="flex items-center justify-between px-1 mb-2">
+              <span class="text-fg-muted text-xs uppercase tracking-wider">昨天</span>
+              <span class="text-fg-dim text-xs">7</span>
+            </div>
+            <div class="space-y-1">
+              <button class="w-full text-left px-3 py-2 rounded-md card-hover border border-transparent hover:border-stroke">
+                <div class="flex items-center gap-2 text-xs text-fg-muted mb-1">
+                  <span>23:11</span>
+                  <span class="chip">读书</span>
+                </div>
+                <div class="truncate text-fg">《Thinking, Fast and Slow》第三章…</div>
+              </button>
+              <button class="w-full text-left px-3 py-2 rounded-md card-hover border border-transparent hover:border-stroke">
+                <div class="flex items-center gap-2 text-xs text-fg-muted mb-1">
+                  <span>19:30</span>
+                </div>
+                <div class="truncate text-fg">Electron 打包签名踩坑记录</div>
+              </button>
+              <div class="text-center text-fg-dim text-xs py-1">+ 5 条</div>
+            </div>
+          </div>
+
+          <!-- 本周 -->
+          <div>
+            <div class="flex items-center justify-between px-1 mb-2">
+              <span class="text-fg-muted text-xs uppercase tracking-wider">本周</span>
+              <span class="text-fg-dim text-xs">23</span>
+            </div>
+          </div>
+          <div>
+            <div class="flex items-center justify-between px-1 mb-2">
+              <span class="text-fg-muted text-xs uppercase tracking-wider">上周</span>
+              <span class="text-fg-dim text-xs">31</span>
+            </div>
+          </div>
+          <div>
+            <div class="flex items-center justify-between px-1 mb-2">
+              <span class="text-fg-muted text-xs uppercase tracking-wider">2026-03</span>
+              <span class="text-fg-dim text-xs">128</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 底部：总笔记数 -->
+        <div class="border-t border-stroke px-4 py-3 text-xs text-fg-muted flex justify-between">
+          <span>共 367 条</span>
+          <span>已织网 362</span>
+        </div>
+      </aside>
+
+      <!-- 中：笔记详情 -->
+      <main class="flex-1 overflow-y-auto scroll bg-bg dot-pattern" id="note-area">
+        <div class="max-w-2xl mx-auto px-8 py-6 space-y-6 fade-in">
+
+          <!-- 昨日复盘卡片 -->
+          <div class="rounded-xl border border-stroke bg-gradient-to-br from-bg-card to-bg-elev p-5 glow">
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center gap-2 text-sm">
+                <span class="text-accent">✦</span>
+                <span class="font-semibold">昨日复盘</span>
+                <span class="text-fg-muted text-xs">· 2026-04-19</span>
+              </div>
+              <button class="text-fg-dim hover:text-fg text-sm">×</button>
+            </div>
+            <p class="font-serif text-base leading-relaxed mb-4">
+              你昨天的 7 条笔记围绕 <span class="text-accent">「工具与思考的关系」</span>，从 Electron 踩坑延伸到阅读 Kahneman 的系统一系统二。
+            </p>
+            <div class="space-y-2 text-sm">
+              <div class="flex gap-3 items-start">
+                <span class="text-accent font-mono">[1]</span>
+                <div>
+                  <div class="text-fg">《Thinking, Fast and Slow》引用</div>
+                  <div class="text-fg-muted text-xs mt-0.5">"直觉是被训练过的模式识别"——这让你想到 AI 辅助决策</div>
+                </div>
+              </div>
+              <div class="flex gap-3 items-start">
+                <span class="text-accent font-mono">[2]</span>
+                <div>
+                  <div class="text-fg">Electron 打包签名踩坑</div>
+                  <div class="text-fg-muted text-xs mt-0.5">EV 证书价格 vs 用户体验权衡</div>
+                </div>
+              </div>
+              <div class="flex gap-3 items-start">
+                <span class="text-accent font-mono">[3]</span>
+                <div>
+                  <div class="text-fg">"工具应当隐形"</div>
+                  <div class="text-fg-muted text-xs mt-0.5">你在晚 10 点写的这条，可能和今天的设计想法有关</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 当前选中笔记 -->
+          <div class="rounded-xl border border-stroke bg-bg-card p-6" id="note-detail">
+            <div class="flex items-center justify-between mb-4 text-sm text-fg-muted">
+              <div class="flex items-center gap-3">
+                <span>2026-04-20 21:18</span>
+                <span class="text-fg-dim">·</span>
+                <span>编辑于 2 分钟前</span>
+              </div>
+              <div class="flex gap-2">
+                <button class="hover:text-fg" title="归档">📁</button>
+                <button class="hover:text-fg" title="更多">⋯</button>
+              </div>
+            </div>
+
+            <article class="font-serif text-[15px] leading-7 space-y-3" id="note-body">
+              <h2 class="text-xl font-semibold font-sans">关于 SQLite FTS5 的发现</h2>
+              <p>今天在做 Lumen 的本地搜索方案选型，发现 SQLite 内置的 FTS5 比我想象的强大得多——支持 Porter stemming、unicode61 分词、甚至能做 BM25 评分。</p>
+              <p>更惊喜的是配合 <code class="bg-bg-soft px-1.5 py-0.5 rounded text-[13px] font-mono">sqlite-vec</code> 扩展可以做向量检索，纯本地、零配置、零服务器。</p>
+              <p class="text-fg-muted italic">"数据库应当是文件，而不是服务。" —— 这个理念越来越对。</p>
+            </article>
+
+            <!-- AI 生成的标签 -->
+            <div class="flex flex-wrap gap-1.5 mt-5 pt-4 border-t border-stroke">
+              <span class="chip chip-accent">🏷 数据库</span>
+              <span class="chip chip-accent">🏷 本地优先</span>
+              <span class="chip chip-accent">🏷 技术选型</span>
+              <span class="chip text-fg-dim">+ 添加</span>
+            </div>
+          </div>
+
+          <!-- AI 关联 -->
+          <div class="rounded-xl border border-stroke bg-bg-elev p-5" id="related">
+            <div class="flex items-center gap-2 mb-3 text-sm">
+              <span class="text-accent">💡</span>
+              <span class="font-semibold">让我想起你过去写的…</span>
+              <span class="text-fg-dim text-xs">· AI 织网</span>
+            </div>
+            <div class="space-y-3">
+              <button class="w-full text-left p-3 rounded-lg border border-stroke card-hover note-hover">
+                <div class="flex items-center gap-2 text-xs text-fg-muted mb-1">
+                  <span>2026-03-28 · 3 周前</span>
+                  <span class="chip">技术</span>
+                </div>
+                <div class="text-sm mb-1">考虑用 PouchDB 做本地存储，但同步机制太复杂了…</div>
+                <div class="text-xs text-accent">🔗 都在探讨本地优先的存储方案，但你的思路在演进</div>
+              </button>
+              <button class="w-full text-left p-3 rounded-lg border border-stroke card-hover note-hover">
+                <div class="flex items-center gap-2 text-xs text-fg-muted mb-1">
+                  <span>2026-02-11 · 2 个月前</span>
+                  <span class="chip">灵感</span>
+                </div>
+                <div class="text-sm mb-1">好的工具应该隐形。用户不该思考"数据在哪"。</div>
+                <div class="text-xs text-accent">🔗 今天的选择正是这条原则的落地</div>
+              </button>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <!-- 右：Ask Lumen -->
+      <aside class="w-[360px] border-l border-stroke bg-bg-elev flex flex-col">
+        <div class="h-12 border-b border-stroke flex items-center justify-between px-4">
+          <div class="flex items-center gap-2 text-sm">
+            <span class="text-accent">✦</span>
+            <span class="font-semibold">Ask Lumen</span>
+          </div>
+          <button class="text-fg-muted hover:text-fg text-sm" title="新对话">＋</button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto scroll p-4 space-y-4 text-sm">
+
+          <!-- 用户消息 -->
+          <div class="flex justify-end">
+            <div class="max-w-[85%] bg-bg-card border border-stroke rounded-2xl rounded-tr-sm px-4 py-2.5">
+              我最近对"本地优先"的看法有什么变化？
+            </div>
+          </div>
+
+          <!-- AI 回答 -->
+          <div class="flex">
+            <div class="max-w-[90%] space-y-3">
+              <div class="flex items-center gap-2 text-xs text-fg-muted">
+                <span class="text-accent">✦</span>
+                <span>Lumen · 读取了 5 条笔记</span>
+              </div>
+              <div class="font-serif text-[14px] leading-6 space-y-2">
+                <p>你对「本地优先」的看法经历了三个阶段：</p>
+                <p><span class="text-accent font-sans font-semibold">最初（2 月）</span>你把它当作<strong>技术选型</strong>，纠结 PouchDB/IndexedDB 谁更好 <span class="text-accent font-mono cursor-pointer hover:underline">[1]</span>。</p>
+                <p><span class="text-accent font-sans font-semibold">中期（3 月）</span>开始反思<strong>它的价值主张</strong>——用户隐私、离线可用 <span class="text-accent font-mono cursor-pointer hover:underline">[2]</span>。</p>
+                <p><span class="text-accent font-sans font-semibold">最近（今天）</span>升华为一种<strong>产品哲学</strong>：「数据库应当是文件，而不是服务」<span class="text-accent font-mono cursor-pointer hover:underline">[3]</span>。</p>
+                <p class="text-fg-muted">你的思考在从「怎么做」走向「为什么做」。</p>
+              </div>
+
+              <div class="flex flex-wrap gap-1.5 pt-2">
+                <button class="chip chip-accent">[1] 2026-02-11</button>
+                <button class="chip chip-accent">[2] 2026-03-28</button>
+                <button class="chip chip-accent">[3] 今天 21:18</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 模拟流式 -->
+          <div class="flex">
+            <div class="max-w-[90%]">
+              <div class="font-serif text-[14px] leading-6 text-fg-muted italic typing">
+                想继续追问吗？
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 输入框 -->
+        <div class="border-t border-stroke p-3">
+          <div class="rounded-xl border border-stroke bg-bg-card focus-within:border-accent transition">
+            <textarea
+              placeholder="问点什么...（⌘↵ 发送）"
+              class="w-full bg-transparent text-sm p-3 resize-none focus:outline-none"
+              rows="2"
+            ></textarea>
+            <div class="flex items-center justify-between px-3 pb-2 text-xs text-fg-dim">
+              <span>⌘K 历史 · ⌘↵ 发送</span>
+              <button class="text-accent font-semibold">发送 →</button>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <!-- 悬浮捕捉按钮（移动端风格，仅视觉） -->
+    <!-- 已移至侧栏 -->
+
+    <!-- ============================================= -->
+    <!-- 叠加层：闪念捕捉窗口 -->
+    <!-- ============================================= -->
+    <div id="overlay-capture" class="absolute inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center pop z-20">
+      <div class="w-[600px] rounded-2xl border border-stroke bg-bg-elev shadow-2xl glow overflow-hidden">
+        <div class="h-10 px-4 flex items-center justify-between border-b border-stroke bg-bg-card/50">
+          <div class="flex items-center gap-2 text-sm">
+            <span class="text-accent">✦</span>
+            <span class="font-semibold">闪念</span>
+            <span class="text-fg-dim text-xs">· 2026-04-20 21:18</span>
+          </div>
+          <button onclick="setView('main')" class="text-fg-muted hover:text-fg text-xs border border-stroke rounded px-2 py-0.5">Esc</button>
+        </div>
+        <div class="p-5">
+          <textarea
+            autofocus
+            placeholder="此刻，什么在你脑海？"
+            class="w-full bg-transparent font-serif text-lg leading-7 resize-none focus:outline-none"
+            rows="5"
+          >今天发现 SQLite FTS5 + sqlite-vec 可以在一个文件里完成全文检索 + 向量检索。数据库应当是文件，而不是服务。</textarea>
+        </div>
+        <div class="h-10 px-4 flex items-center justify-between border-t border-stroke bg-bg-card/30 text-xs text-fg-muted">
+          <div class="flex items-center gap-4">
+            <button class="hover:text-fg">📎 拖入文件</button>
+            <button class="hover:text-fg">📷 截图</button>
+            <span class="text-fg-dim">· 96 字</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span>关闭自动保存</span>
+            <button onclick="setView('main')" class="bg-accent text-black font-semibold px-3 py-1 rounded">⌘↵ 保存</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================= -->
+    <!-- 叠加层：命令面板 -->
+    <!-- ============================================= -->
+    <div id="overlay-cmd" class="absolute inset-0 bg-black/60 backdrop-blur-sm hidden items-start justify-center pt-24 pop z-20">
+      <div class="w-[560px] rounded-xl border border-stroke bg-bg-elev shadow-2xl overflow-hidden">
+        <div class="flex items-center gap-3 px-4 py-3 border-b border-stroke">
+          <span class="text-fg-muted">🔍</span>
+          <input
+            autofocus
+            placeholder="搜索笔记或执行命令..."
+            value="sqlite"
+            class="flex-1 bg-transparent focus:outline-none text-sm"
+          />
+          <button onclick="setView('main')" class="text-xs text-fg-muted border border-stroke rounded px-1.5 py-0.5">Esc</button>
+        </div>
+
+        <div class="py-2 max-h-[400px] overflow-y-auto scroll">
+          <div class="px-4 py-1 text-[10px] uppercase tracking-wider text-fg-dim">命令</div>
+          <button class="w-full flex items-center gap-3 px-4 py-2 card-hover text-sm">
+            <span>➤</span>
+            <span>新建闪念</span>
+            <kbd class="ml-auto text-[10px] bg-bg-card border border-stroke rounded px-1.5 py-0.5">⌃⌥Space</kbd>
+          </button>
+          <button class="w-full flex items-center gap-3 px-4 py-2 card-hover text-sm">
+            <span>➤</span>
+            <span>跳转到今日复盘</span>
+            <kbd class="ml-auto text-[10px] bg-bg-card border border-stroke rounded px-1.5 py-0.5">⌃D</kbd>
+          </button>
+          <button class="w-full flex items-center gap-3 px-4 py-2 card-hover text-sm">
+            <span>➤</span>
+            <span>导出全部笔记 (JSON)</span>
+          </button>
+
+          <div class="px-4 py-1 mt-2 text-[10px] uppercase tracking-wider text-fg-dim">笔记 · 3 条匹配</div>
+          <button class="w-full flex items-start gap-3 px-4 py-2 card-hover text-sm text-left bg-bg-card/50">
+            <span>📝</span>
+            <div class="flex-1">
+              <div>关于 <mark class="bg-accent/20 text-accent not-italic">SQLite</mark> FTS5 的发现</div>
+              <div class="text-xs text-fg-muted mt-0.5">今天 21:18 · 技术</div>
+            </div>
+          </button>
+          <button class="w-full flex items-start gap-3 px-4 py-2 card-hover text-sm text-left">
+            <span>📝</span>
+            <div class="flex-1">
+              <div>考虑用 PouchDB… <mark class="bg-accent/20 text-accent not-italic">SQLite</mark> 对比</div>
+              <div class="text-xs text-fg-muted mt-0.5">3 周前 · 技术</div>
+            </div>
+          </button>
+          <button class="w-full flex items-start gap-3 px-4 py-2 card-hover text-sm text-left">
+            <span>📝</span>
+            <div class="flex-1">
+              <div>WAL 模式让 <mark class="bg-accent/20 text-accent not-italic">SQLite</mark> 并发写…</div>
+              <div class="text-xs text-fg-muted mt-0.5">1 个月前 · 技术</div>
+            </div>
+          </button>
+        </div>
+
+        <div class="border-t border-stroke px-4 py-2 text-[11px] text-fg-muted flex items-center justify-between">
+          <span>↑↓ 选择 · ↵ 打开</span>
+          <span>由 sqlite-vec 驱动</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================= -->
+    <!-- 叠加层：空状态（首次启动） -->
+    <!-- ============================================= -->
+    <div id="overlay-empty" class="absolute inset-0 hidden items-center justify-center bg-bg dot-pattern z-10">
+      <div class="text-center max-w-md fade-in">
+        <div class="text-6xl mb-6 text-accent">✦</div>
+        <h1 class="text-3xl font-serif mb-3">欢迎来到 Lumen</h1>
+        <p class="text-fg-muted mb-8 leading-relaxed">
+          此刻，什么在你脑海？<br/>
+          按下 <kbd class="bg-bg-card border border-stroke rounded px-2 py-0.5 text-sm mx-1">Ctrl</kbd>
+          <kbd class="bg-bg-card border border-stroke rounded px-2 py-0.5 text-sm mx-1">Alt</kbd>
+          <kbd class="bg-bg-card border border-stroke rounded px-2 py-0.5 text-sm mx-1">Space</kbd>
+          记下第一个想法。
+        </p>
+        <button onclick="setView('capture')" class="px-6 py-3 bg-accent text-black font-semibold rounded-lg hover:bg-accent/90 transition">
+          开始捕捉 →
+        </button>
+        <div class="mt-12 text-xs text-fg-dim">
+          所有笔记存储在本地，由 AI 默默织网。
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 说明区 -->
+  <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+    <div class="p-4 rounded-lg border border-stroke bg-bg-elev">
+      <div class="text-accent font-semibold mb-2">✚ 闪念捕捉</div>
+      <div class="text-fg-muted leading-relaxed">全局快捷键唤出，零摩擦输入。保存后自动织网：生成 embedding、打标签、找关联。</div>
+    </div>
+    <div class="p-4 rounded-lg border border-stroke bg-bg-elev">
+      <div class="text-accent font-semibold mb-2">✦ Ask Lumen</div>
+      <div class="text-fg-muted leading-relaxed">和你的笔记对话。基于本地向量检索 + LLM，回答引用真实笔记，可点击跳转。</div>
+    </div>
+    <div class="p-4 rounded-lg border border-stroke bg-bg-elev">
+      <div class="text-accent font-semibold mb-2">💡 AI 织网</div>
+      <div class="text-fg-muted leading-relaxed">后台异步发现笔记之间的语义关联，主动提示"这条让我想起你 3 周前写的…"</div>
+    </div>
+  </div>
+
+  <div class="mt-4 p-4 rounded-lg border border-stroke bg-bg-elev text-sm">
+    <div class="font-semibold text-accent mb-2">📄 配套设计文档</div>
+    <div class="text-fg-muted">
+      完整的架构、数据库 schema、用户流、MVP 里程碑详见
+      <code class="bg-bg-soft px-1.5 py-0.5 rounded text-xs">design/lumen-design.md</code>
+    </div>
+  </div>
+</div>
+
+<script>
+  function setView(v) {
+    // reset overlays
+    ['capture', 'cmd', 'empty'].forEach(k => {
+      const el = document.getElementById('overlay-' + k);
+      if (el) { el.classList.add('hidden'); el.classList.remove('flex'); }
+    });
+    // reset button styles
+    ['main', 'capture', 'cmd', 'empty'].forEach(k => {
+      const btn = document.getElementById('btn-' + k);
+      if (btn) btn.classList.remove('border-accent', 'text-accent');
+    });
+    // show target
+    if (v !== 'main') {
+      const el = document.getElementById('overlay-' + v);
+      if (el) { el.classList.remove('hidden'); el.classList.add('flex'); }
+    }
+    const activeBtn = document.getElementById('btn-' + v);
+    if (activeBtn) activeBtn.classList.add('border-accent', 'text-accent');
+  }
+  function selectNote(id) {
+    // simple flash effect on body
+    const el = document.getElementById('note-body');
+    if (el) { el.style.opacity = '0.3'; setTimeout(() => el.style.opacity = '1', 100); }
+  }
+  // set default active
+  setView('main');
+</script>
+
+</body>
+</html>

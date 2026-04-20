@@ -1,0 +1,75 @@
+# =============================================
+# Node.js
+# =============================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+*.log
+
+# =============================================
+# Build outputs
+# =============================================
+dist/
+dist-ssr/
+release/
+out/
+
+# =============================================
+# Vite / TypeScript
+# =============================================
+*.local
+*.tsbuildinfo
+
+# =============================================
+# Environment / Secrets — NEVER commit these
+# =============================================
+.env
+.env.local
+.env.*.local
+# userData AI config may contain API keys
+electron/userData/
+
+# =============================================
+# Test & Coverage
+# =============================================
+coverage/
+.vitest-cache/
+html/
+test-results/
+playwright-report/
+blob-report/
+
+# =============================================
+# Electron build artifacts
+# =============================================
+*.asar
+# Lumen SQLite database (user data)
+*.db
+*.db-wal
+*.db-shm
+
+# =============================================
+# OS / Editor
+# =============================================
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# =============================================
+# IDE / AI tools
+# =============================================
+.trae/
+.windsurf/
+.cursor/

@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https: http://localhost:*; font-src 'self' data:;" />
+    <title>Lumen · 灵犀</title>
+    <style>
+      html, body, #root { height: 100%; margin: 0; background: transparent; }
+      body { font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', sans-serif; color: #ededed; overflow: hidden; }
+      #root { min-height: 100vh; }
+      ::-webkit-scrollbar { width: 8px; height: 8px; }
+      ::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 4px; }
+      ::-webkit-scrollbar-thumb:hover { background: #3a3a3a; }
+      ::-webkit-scrollbar-track { background: transparent; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
