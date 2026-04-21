@@ -26,6 +26,7 @@ contextBridge.exposeInMainWorld('lumen', {
     search: (q, limit) => invoke('note:search', q, limit),
     stats: () => invoke('note:stats'),
     links: (id) => invoke('note:links', id),
+    reweave: () => invoke('note:reweave'),
   },
 
   // ── Ask Lumen（流式） ──

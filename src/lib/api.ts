@@ -17,6 +17,7 @@ export interface LumenAPI {
     search: (q: string, limit?: number) => Promise<Note[]>;
     stats: () => Promise<Stats>;
     links: (id: number) => Promise<NoteLink[]>;
+    reweave: () => Promise<{ ok: boolean }>;
   };
   ask: {
     start: (question: string, onEvent: (msg: AskEvent) => void) => { cancel: () => void };

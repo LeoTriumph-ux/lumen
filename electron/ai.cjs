@@ -258,8 +258,8 @@ async function weaveNote(noteId) {
   }
   if (tags.length) db.setNoteTags(noteId, tags, true);
 
-  // 3. 找关联 + 生成理由（需要有向量，阈值 0.55 过滤弱关联）
-  const candidates = vector.length ? findSimilar(noteId, vector, 3, 0.55) : [];
+  // 3. 找关联 + 生成理由（阈值 0.4 适配短中文笔记的余弦相似度分布）
+  const candidates = vector.length ? findSimilar(noteId, vector, 5, 0.4) : [];
   const links = [];
   for (const c of candidates) {
     let reason = null;

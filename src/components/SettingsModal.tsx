@@ -304,9 +304,38 @@ function AITab({ config, onSave, onTest }: {
         </div>
       )}
 
+      {/* 重新织网 */}
+      {config.hasApiKey && (
+        <div className="pt-2 border-t border-stroke">
+          <ReweaveButton />
+        </div>
+      )}
+
       <Tip>
         所有 AI 调用都直接从你的电脑出发，Lumen 不经手你的数据。API Key 使用系统加密安全存储。
       </Tip>
+    </div>
+  );
+}
+
+function ReweaveButton() {
+  const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState(false);
+  async function go() {
+    setBusy(true);
+    await lumen().notes.reweave();
+    setBusy(false);
+    setDone(true);
+    setTimeout(() => setDone(false), 3000);
+  }
+  return (
+    <div className="flex items-center gap-3">
+      <button onClick={go} disabled={busy} className="btn text-xs">
+        {busy ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+        重新织网所有笔记
+      </button>
+      {done && <span className="text-xs text-accent">已启动，后台处理中…</span>}
+      <span className="text-[11px] text-fg-dim">重新生成 embedding、标签和关联</span>
     </div>
   );
 }

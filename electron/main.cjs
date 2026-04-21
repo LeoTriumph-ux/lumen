@@ -215,6 +215,11 @@ function registerIpc() {
   ipcMain.handle('note:search', (_e, q, limit) => db.searchNotes(q, limit));
   ipcMain.handle('note:stats', () => db.stats());
   ipcMain.handle('note:links', (_e, id) => db.getNoteLinks(id));
+  ipcMain.handle('note:reweave', () => {
+    db.resetWeaving();
+    weaver.schedule();
+    return { ok: true };
+  });
 
   // ── Ask Lumen（流式） ──
   const askControllers = new Map();

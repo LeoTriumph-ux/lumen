@@ -222,6 +222,11 @@ function getUnwoven(limit = 20) {
   `).all(limit).map(hydrate);
 }
 
+function resetWeaving() {
+  db.prepare(`UPDATE notes SET wove_at = NULL WHERE archived = 0`).run();
+  db.prepare(`DELETE FROM note_links`).run();
+}
+
 /* ────────── 标签 ────────── */
 
 function upsertTag(name, color = null) {
@@ -272,19 +277,39 @@ function setNoteLinks(sourceId, links) {
 }
 
 function getNoteLinks(noteId) {
-  return db.prepare(`
-    SELECT l.target_id AS targetId, l.similarity, l.reason, n.*
-    FROM note_links l JOIN notes n ON n.id = l.target_id
-    WHERE l.source_id = ? AND n.archived = 0
-    ORDER BY l.similarity DESC LIMIT 5
-  `).all(noteId).map(r => ({
-    similarity: r.similarity,
-    reason: r.reason,
-    note: hydrate({
-      id: r.targetId, content: r.content, type: r.type, metadata: r.metadata,
-      embedding: null, created_at: r.created_at, updated_at: r.updated_at, archived: r.archived,
-    }),
-  }));
+  // 双向查询：当前笔记作为源或目标的所有关联
+  const links = db.prepare(`
+    SELECT target_id AS otherId, similarity, reason FROM note_links WHERE source_id = ?
+    UNION
+    SELECT source_id AS otherId, similarity, reason FROM note_links WHERE target_id = ?
+  `).all(noteId, noteId);
+
+  if (links.length === 0) return [];
+
+  // 去重并保留最高相似度
+  const byId = new Map();
+  for (const l of links) {
+    const ex = byId.get(l.otherId);
+    if (!ex || l.similarity > ex.similarity) byId.set(l.otherId, l);
+  }
+
+  const ids = Array.from(byId.keys());
+  const placeholders = ids.map(() => '?').join(',');
+  const notes = db.prepare(`
+    SELECT * FROM notes WHERE id IN (${placeholders}) AND archived = 0
+  `).all(...ids);
+
+  return notes
+    .map(n => {
+      const link = byId.get(n.id);
+      return {
+        similarity: link.similarity,
+        reason: link.reason,
+        note: hydrate(n),
+      };
+    })
+    .sort((a, b) => b.similarity - a.similarity)
+    .slice(0, 5);
 }
 
 /* ────────── 对话 ────────── */
@@ -409,7 +434,7 @@ module.exports = {
   init, getDbPath,
   createNote, getNote, updateNote, deleteNote, archiveNote,
   listNotes, searchNotes, countNotes,
-  setEmbedding, getAllEmbeddings, getUnwoven,
+  setEmbedding, getAllEmbeddings, getUnwoven, resetWeaving,
   upsertTag, setNoteTags, getNoteTags,
   setNoteLinks, getNoteLinks,
   createConversation, getConversation, listConversations,
